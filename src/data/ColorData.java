@@ -2,7 +2,11 @@ package data;
 
 public enum ColorData {
     WHITE("Белый"),
-    RED("Красный");
+    RED("Красный"),
+    GOLD("Золотой"),
+    BLACK("Черный"),
+    GREY("Серый"),
+    SILVER("Серебристый");
 
     private String name;
 

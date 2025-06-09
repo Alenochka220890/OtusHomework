@@ -1,5 +1,4 @@
-package animals;
-
+import animals.AbsAnimal;
 import data.AnimalTypeData;
 import data.ColorData;
 import data.CommandData;

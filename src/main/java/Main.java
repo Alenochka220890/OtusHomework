@@ -225,15 +225,156 @@ public class Main {
 
 
                 }
+                case UPDATEANIMAL: {
+
+                    List<String> animalsTypeNames = new ArrayList<>();
+
+                    for (AnimalTypeData animalTypeData : AnimalTypeData.values()) {
+                        animalsTypeNames.add(animalTypeData.name().toLowerCase());
+                    }
+
+                    AnimalTypeData animalTypeData = null;
+                    String userAnimalTypeData = "";
+                    while (true) {
+                        System.out.printf("Введите тип животного, которое хотите изменить: %s\n", String.join(", ", animalsTypeNames));
+                        userAnimalTypeData = scanner.next();
+
+                        if (!animalsTypeNames.contains(userAnimalTypeData)) {
+                            System.out.println("Вы ввели неверный тип животного");
+                            continue;
+                        }
+
+                        animalTypeData = AnimalTypeData.valueOf(userAnimalTypeData.toUpperCase());
+                        break;
+                    }
+
+                    // Выводим из БД всех животных выбранного типа
+                    MySqlDbConnector dbConnector = null;
+                    try {
+                        dbConnector = new MySqlDbConnector();
+                        ResultSet result = dbConnector.executeQuery("SELECT * FROM animals where type = '" + userAnimalTypeData.toLowerCase() + "'");
+                        // Выводим заголовок таблицы
+                        System.out.println("\nСписок животных из базы данных:");
+                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+                        System.out.printf("| %-2s | %-19s | %-19s | %-9s | %-6s | %-14s |\n",
+                                "ID", "Тип", "Имя", "Возраст", "Вес", "Цвет");
+                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+
+                        // Обрабатываем результаты
+                        while (result.next()) {
+                            System.out.printf("| %-2d | %-19s | %-19s | %-9d | %-6d | %-14s |\n",
+                                    result.getInt("id"),
+                                    result.getString("type"),
+                                    result.getString("name"),
+                                    result.getInt("age"),
+                                    result.getInt("weight"),
+                                    result.getString("color")
+                            );
+                        }
+                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+
+                    } catch (SQLException | IOException ex) {
+                        System.out.println("Ошибка при запросе к БД: " + ex.getMessage());
+                    }
+
+
+                    int userAnimalId = -1;
+                    while (true) {
+                        System.out.println("Введите ID животного из предложенных, которое хотите изменить: ");
+                        if (!scanner.hasNextInt()) {
+                            System.out.println("Ошибка: нужно ввести целое число!");
+                            scanner.next(); // очищаем некорректный ввод
+                            continue;
+                        }
+                        userAnimalId = scanner.nextInt();
+                        break;
+                    }
+
+                    while (true) {
+                        System.out.printf("Введите тип животного: %s\n", String.join(", ", animalsTypeNames));
+                        userAnimalTypeData = scanner.next();
+
+                        if (!animalsTypeNames.contains(userAnimalTypeData)) {
+                            System.out.println("Вы ввели неверный тип животного");
+                            continue;
+                        }
+                        animalTypeData = AnimalTypeData.valueOf(userAnimalTypeData.toUpperCase());
+                        break;
+                    }
+                    System.out.println("Введите имя вашего животного");
+
+                    String name;
+                    while (true) {
+
+                        name = scanner.next().trim();
+                        // Проверяем, что строка не пустая и состоит только из букв
+                        if (!name.isEmpty() && name.matches("^[a-zA-Zа-яА-ЯёЁ]+$")) {
+                            //Делаем так, чтобы имя записалось с заглавной буквы
+                            name = name.substring(0, 1).toUpperCase()
+                                    + name.substring(1).toLowerCase();
+                            break;
+                        } else {
+                            System.out.println("Некорректный ввод. Введите имя, используя только буквы:");
+
+                        }
+                    }
+
+
+                    int animalAge = getAnimalAgeWeight("Введите возраст животного", "Вы ввели неверный возраст животного. Повторите ввод");
+                    int animalWeight = getAnimalAgeWeight("Введите вес животного", "Вы ввели неверный вес животного. Повторите ввод");
+
+                    List<String> animalsColor = new ArrayList<>();
+
+                    for (ColorData colorData : ColorData.values()) {
+                        animalsColor.add(colorData.name().toLowerCase());
+                    }
+
+                    ColorData colorData = null;
+
+                    while (true) {
+                        System.out.printf("Введите цвет животного: %s\n", String.join(", ", animalsColor));
+                        String userAnimalColor = scanner.next();
+
+                        if (!animalsColor.contains(userAnimalColor)) {
+                            System.out.println("Вы ввели неверный цвет животного");
+                            continue;
+                        }
+                        colorData = ColorData.valueOf(userAnimalColor.toUpperCase());
+                        break;
+                    }
+
+                    AbsAnimal animal = new AnimalFactory(name, animalAge, animalWeight, colorData, animalTypeData).create(animalTypeData);
+                    animals.add(animal);
+                    System.out.println(animal.toString());
+                    // Обновляем в БД
+                    try {
+                        dbConnector = new MySqlDbConnector();
+                        String sql = String.format(
+                                "UPDATE animals SET type = '%s', name = '%s', age = %d , weight = %d, color = '%s' where id = %d",
+                                animalTypeData.name().toLowerCase(),
+                                name,
+                                animalAge,
+                                animalWeight,
+                                colorData.name().toLowerCase(),
+                                userAnimalId
+                        );
+                        dbConnector.execute(sql);
+                        System.out.println("Животное обновлено в БД!");
+                    } catch (SQLException | IOException ex) {
+                        System.out.println("Ошибка при обновлении в БД: " + ex.getMessage());
+                    }
+                    break;
+
+
+                }
                 case EXIT: {
                     System.exit(0);
                 }
                 break;
             }
+
         }
-
     }
-
 
     private static int getAnimalAgeWeight(String consoleMsg, String errorMessage) {
         while (true) {
@@ -247,6 +388,8 @@ public class Main {
         }
 
     }
+
+
 }
 
 

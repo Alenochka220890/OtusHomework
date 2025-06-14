@@ -114,7 +114,7 @@ public class Main {
                     System.out.println(animal.toString());
                     // Сохраняем в БД
                     MySqlDbConnector dbConnector = null;
-                    try  {
+                    try {
                         dbConnector = new MySqlDbConnector();
                         String sql = String.format(
                                 "INSERT INTO animals (type, name, age, weight, color) VALUES ('%s', '%s', %d, %d, '%s')",
@@ -129,7 +129,7 @@ public class Main {
                     } catch (SQLException | IOException ex) {
                         System.out.println("Ошибка при сохранении в БД: " + ex.getMessage());
                     }
-                   break;
+                    break;
 
 
                 }
@@ -169,15 +169,71 @@ public class Main {
                     }
                     break;
                 }
+
+                case SELECTTYPE: {
+
+                    List<String> animalsTypeNames = new ArrayList<>();
+
+                    for (AnimalTypeData animalTypeData : AnimalTypeData.values()) {
+                        animalsTypeNames.add(animalTypeData.name().toLowerCase());
+                    }
+
+                    AnimalTypeData animalTypeData = null;
+                    String userAnimalTypeData = "";
+                    while (true) {
+                        System.out.printf("Введите тип животного для выбора: %s\n", String.join(", ", animalsTypeNames));
+                        userAnimalTypeData = scanner.next();
+
+                        if (!animalsTypeNames.contains(userAnimalTypeData)) {
+                            System.out.println("Вы ввели неверный тип животного");
+                            continue;
+                        }
+
+                        animalTypeData = AnimalTypeData.valueOf(userAnimalTypeData.toUpperCase());
+                        break;
+                    }
+
+                    // Выбираем из БД по типу животного
+                    MySqlDbConnector dbConnector = null;
+                    try {
+                        dbConnector = new MySqlDbConnector();
+                        ResultSet result = dbConnector.executeQuery("SELECT * FROM animals where type = '" + userAnimalTypeData.toLowerCase() + "'");
+                        // Выводим заголовок таблицы
+                        System.out.println("\nСписок животных из базы данных:");
+                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+                        System.out.printf("| %-2s | %-19s | %-19s | %-9s | %-6s | %-14s |\n",
+                                "ID", "Тип", "Имя", "Возраст", "Вес", "Цвет");
+                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+
+                        // Обрабатываем результаты
+                        while (result.next()) {
+                            System.out.printf("| %-2d | %-19s | %-19s | %-9d | %-6d | %-14s |\n",
+                                    result.getInt("id"),
+                                    result.getString("type"),
+                                    result.getString("name"),
+                                    result.getInt("age"),
+                                    result.getInt("weight"),
+                                    result.getString("color")
+                            );
+                        }
+                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+
+                    } catch (SQLException | IOException ex) {
+                        System.out.println("Ошибка при запросе к БД: " + ex.getMessage());
+                    }
+                    break;
+
+
+                }
                 case EXIT: {
                     System.exit(0);
                 }
                 break;
             }
-
         }
 
     }
+
 
     private static int getAnimalAgeWeight(String consoleMsg, String errorMessage) {
         while (true) {
@@ -191,6 +247,6 @@ public class Main {
         }
 
     }
+}
 
 
-    }

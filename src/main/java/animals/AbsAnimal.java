@@ -68,10 +68,6 @@ public abstract class AbsAnimal {
     }
 
 
-//    public String toString(){
-//       return String.format("Привет! Меня зовут %s, мне %d %s, я вешу - %d кг, мой цвет - %s, %s, %s", name, age, getYearPadej(), weight, color.getName().toLowerCase(), say(), fly());
-//   }
-
     public String toString() {
         if (this.type == AnimalTypeData.CAT || this.type == AnimalTypeData.DOG) {
             return String.format("Привет! Я %s. Меня зовут %s, мне %d %s, я вешу - %d кг, мой цвет - %s, %s", type.getName().toLowerCase(), name, age, getYearPadej(), weight, color.getName().toLowerCase(), say());

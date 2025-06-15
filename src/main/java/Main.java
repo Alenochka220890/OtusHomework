@@ -4,6 +4,7 @@ import data.AnimalTypeData;
 import data.ColorData;
 import data.CommandData;
 import factory.AnimalFactory;
+import sqlmethods.SqlMethods;
 import tools.NumberValidator;
 
 import java.io.IOException;
@@ -20,10 +21,22 @@ public class Main {
     //Создаем объект класса NumberValidator (для определения какие числа для ввода будут приниматься)
     private static NumberValidator numberValidator = new NumberValidator();
 
+    private static SqlMethods sqlMethods;
+
     public Main() throws SQLException, IOException {
+
     }
 
-    public static void main(String... args) {
+
+    public static void main(String... args) throws SQLException {
+
+
+        try {
+            sqlMethods = new SqlMethods();
+        } catch (SQLException | IOException e) {
+            System.err.println("Ошибка при подключении к БД: " + e.getMessage());
+            return;
+        }
         //Создаем списки с животными и  командами, которые будут выводиться на консоль для выбора и приниматься программой
         List<AbsAnimal> animals = new ArrayList<>();
         List<String> commandNames = new ArrayList<>();
@@ -112,62 +125,20 @@ public class Main {
                     AbsAnimal animal = new AnimalFactory(name, animalAge, animalWeight, colorData, animalTypeData).create(animalTypeData);
                     animals.add(animal);
                     System.out.println(animal.toString());
-                    // Сохраняем в БД
-                    MySqlDbConnector dbConnector = null;
-                    try {
-                        dbConnector = new MySqlDbConnector();
-                        String sql = String.format(
-                                "INSERT INTO animals (type, name, age, weight, color) VALUES ('%s', '%s', %d, %d, '%s')",
-                                animalTypeData.name().toLowerCase(),
-                                name,
-                                animalAge,
-                                animalWeight,
-                                colorData.name().toLowerCase()
-                        );
-                        dbConnector.execute(sql);
-                        System.out.println("Животное сохранено в БД!");
-                    } catch (SQLException | IOException ex) {
-                        System.out.println("Ошибка при сохранении в БД: " + ex.getMessage());
-                    }
+
+                    // Сохраняем животное в БД
+                    sqlMethods.addAnimal(animal);
                     break;
 
 
                 }
                 case LIST: {
 
-                    for (AbsAnimal animal : animals) {
-                        System.out.println(animal.toString());
-                    }
-                    MySqlDbConnector dbConnector = null;
-                    try {
-                        // Выполняем запрос к БД
-                        dbConnector = new MySqlDbConnector();
-                        ResultSet result = dbConnector.executeQuery("SELECT * FROM animals");
-
-                        // Выводим заголовок таблицы
-                        System.out.println("\nСписок животных из базы данных:");
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
-                        System.out.printf("| %-2s | %-19s | %-19s | %-9s | %-6s | %-14s |\n",
-                                "ID", "Тип", "Имя", "Возраст", "Вес", "Цвет");
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
-
-                        // Обрабатываем результаты
-                        while (result.next()) {
-                            System.out.printf("| %-2d | %-19s | %-19s | %-9d | %-6d | %-14s |\n",
-                                    result.getInt("id"),
-                                    result.getString("type"),
-                                    result.getString("name"),
-                                    result.getInt("age"),
-                                    result.getInt("weight"),
-                                    result.getString("color")
-                            );
-                        }
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
-
-                    } catch (SQLException | IOException ex) {
-                        System.err.println("Ошибка при получении данных из БД: " + ex.getMessage());
-                    }
+                    // Выводим список животных
+                    ResultSet result = sqlMethods.listAnimal();
+                    sqlMethods.showAnimalResultSet(result);
                     break;
+
                 }
 
                 case SELECTTYPE: {
@@ -188,8 +159,8 @@ public class Main {
                             System.out.println("Вы ввели неверный тип животного");
                             continue;
                         }
-
                         animalTypeData = AnimalTypeData.valueOf(userAnimalTypeData.toUpperCase());
+
                         break;
                     }
 

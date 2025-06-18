@@ -28,7 +28,7 @@ public class Main {
     }
 
 
-    public static void main(String... args) throws SQLException {
+    public static void main(String... args) throws SQLException, IOException {
 
 
         try {
@@ -133,7 +133,6 @@ public class Main {
 
                 }
                 case LIST: {
-
                     // Выводим список животных
                     ResultSet result = sqlMethods.listAnimal();
                     sqlMethods.showAnimalResultSet(result);
@@ -168,30 +167,15 @@ public class Main {
                     MySqlDbConnector dbConnector = null;
                     try {
                         dbConnector = new MySqlDbConnector();
-                        ResultSet result = dbConnector.executeQuery("SELECT * FROM animals where type = '" + userAnimalTypeData.toLowerCase() + "'");
-                        // Выводим заголовок таблицы
-                        System.out.println("\nСписок животных из базы данных:");
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
-                        System.out.printf("| %-2s | %-19s | %-19s | %-9s | %-6s | %-14s |\n",
-                                "ID", "Тип", "Имя", "Возраст", "Вес", "Цвет");
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+                        ResultSet resultType = dbConnector.executeQuery("SELECT * FROM animals where type = '" + userAnimalTypeData.toLowerCase() + "'");
 
-                        // Обрабатываем результаты
-                        while (result.next()) {
-                            System.out.printf("| %-2d | %-19s | %-19s | %-9d | %-6d | %-14s |\n",
-                                    result.getInt("id"),
-                                    result.getString("type"),
-                                    result.getString("name"),
-                                    result.getInt("age"),
-                                    result.getInt("weight"),
-                                    result.getString("color")
-                            );
-                        }
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+                        // Выводим таблицу с результатом поиска по типу животного
+                        sqlMethods.showAnimalResultSet(resultType);
 
                     } catch (SQLException | IOException ex) {
                         System.out.println("Ошибка при запросе к БД: " + ex.getMessage());
                     }
+
                     break;
 
 
@@ -223,26 +207,10 @@ public class Main {
                     MySqlDbConnector dbConnector = null;
                     try {
                         dbConnector = new MySqlDbConnector();
-                        ResultSet result = dbConnector.executeQuery("SELECT * FROM animals where type = '" + userAnimalTypeData.toLowerCase() + "'");
-                        // Выводим заголовок таблицы
-                        System.out.println("\nСписок животных из базы данных:");
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
-                        System.out.printf("| %-2s | %-19s | %-19s | %-9s | %-6s | %-14s |\n",
-                                "ID", "Тип", "Имя", "Возраст", "Вес", "Цвет");
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+                        ResultSet resultType = dbConnector.executeQuery("SELECT * FROM animals where type = '" + userAnimalTypeData.toLowerCase() + "'");
 
-                        // Обрабатываем результаты
-                        while (result.next()) {
-                            System.out.printf("| %-2d | %-19s | %-19s | %-9d | %-6d | %-14s |\n",
-                                    result.getInt("id"),
-                                    result.getString("type"),
-                                    result.getString("name"),
-                                    result.getInt("age"),
-                                    result.getInt("weight"),
-                                    result.getString("color")
-                            );
-                        }
-                        System.out.println("|----|---------------------|---------------------|-----------|--------|----------------|");
+                        // Выводим таблицу с результатом поиска по типу животного
+                        sqlMethods.showAnimalResultSet(resultType);
 
                     } catch (SQLException | IOException ex) {
                         System.out.println("Ошибка при запросе к БД: " + ex.getMessage());
@@ -262,7 +230,7 @@ public class Main {
                     }
 
                     while (true) {
-                        System.out.printf("Введите тип животного: %s\n", String.join(", ", animalsTypeNames));
+                        System.out.printf("Введите тип животного, на которое хотите изменить: %s\n", String.join(", ", animalsTypeNames));
                         userAnimalTypeData = scanner.next();
 
                         if (!animalsTypeNames.contains(userAnimalTypeData)) {
@@ -272,7 +240,7 @@ public class Main {
                         animalTypeData = AnimalTypeData.valueOf(userAnimalTypeData.toUpperCase());
                         break;
                     }
-                    System.out.println("Введите имя вашего животного");
+                    System.out.println("Введите имя животного, на которое хотите изменить");
 
                     String name;
                     while (true) {
@@ -291,8 +259,8 @@ public class Main {
                     }
 
 
-                    int animalAge = getAnimalAgeWeight("Введите возраст животного", "Вы ввели неверный возраст животного. Повторите ввод");
-                    int animalWeight = getAnimalAgeWeight("Введите вес животного", "Вы ввели неверный вес животного. Повторите ввод");
+                    int animalAge = getAnimalAgeWeight("Введите возраст животного, на который хотите изменить", "Вы ввели неверный возраст животного. Повторите ввод");
+                    int animalWeight = getAnimalAgeWeight("Введите вес животного, на который хотите изменить", "Вы ввели неверный вес животного. Повторите ввод");
 
                     List<String> animalsColor = new ArrayList<>();
 
@@ -303,7 +271,7 @@ public class Main {
                     ColorData colorData = null;
 
                     while (true) {
-                        System.out.printf("Введите цвет животного: %s\n", String.join(", ", animalsColor));
+                        System.out.printf("Введите цвет животного, на который хотите изменить: %s\n", String.join(", ", animalsColor));
                         String userAnimalColor = scanner.next();
 
                         if (!animalsColor.contains(userAnimalColor)) {
@@ -334,11 +302,16 @@ public class Main {
                     } catch (SQLException | IOException ex) {
                         System.out.println("Ошибка при обновлении в БД: " + ex.getMessage());
                     }
+
                     break;
 
 
                 }
                 case EXIT: {
+                    //Закрываем соединение к БД
+                    MySqlDbConnector dbConnector = null;
+                    dbConnector = new MySqlDbConnector();
+                    dbConnector.close();
                     System.exit(0);
                 }
                 break;
